@@ -1,4 +1,3 @@
-import json
 import requests
 
 def get_organization_id(organization_page_url):
