@@ -1,3 +1,8 @@
+import json
+import os
+from time import sleep
+from random import uniform as random_uniform
+import random
 import requests
 
 def get_organization_id(organization_page_url):
@@ -40,21 +45,58 @@ def process_response_data(data):
 
   return evnts, data["has_next_page"]
 
+def random_sleep(min_seconds, max_seconds):
+  # Sleep for a random number of seconds between min_seconds and max_seconds.
+  sleep(random_uniform(min_seconds, max_seconds))
+
+def get_all_upcoming_events(organization_id):
+  # Retreive all upcoming events for the organization with the given id.
+
+  has_next_page = True # Indicates whether there are more pages of events to retrieve.
+  page_number = 1 # The page number to retrieve.
+  events_per_page = 12 # The number of events to retrieve per page. The default page size is 12.
+
+  evnts = [] # A list to store all the upcoming events.
+
+  try:
+    while has_next_page:
+      page_url = f"https://www.eventbrite.com/org/{organization_id}/showmore/?\
+                    page_size={events_per_page}&type=future&page={page_number}"
+      
+      response = requests.get(page_url)
+      response.raise_for_status() # Raise an exception if the request was unsuccessful.
+
+      response_json = response.json()
+
+      if not response_json["success"]:
+        break
+
+      page_evnts, has_next_page = process_response_data(response_json["data"])
+      evnts.extend(page_evnts)
+
+      page_number += 1 # The next page will be loaded in the next iteration.
+      random_sleep(3.8, 6.3) # Sleep for a random number of seconds between 3.8 and 6.3. This is
+                             # done to avoid loading the pages too quickly.
+
+      if not has_next_page:
+        break
+
+  except requests.exceptions.RequestException as e:
+    print("Error occurred:", e)
+
+  return evnts
+
 if __name__ == "__main__":
   organzation_page_url = "https://www.eventbrite.com/o/leaderboard-games-32824819501"
   organization_id = get_organization_id(organzation_page_url)
 
-  second_page_url = f"https://www.eventbrite.com/org/{organization_id}/showmore/?page_size=12&type=future&page=2"
+  evnts = get_all_upcoming_events(organization_id)
+  print(f"Retrieved {len(evnts)} upcoming events.")
 
-  try:
-    response = requests.get(second_page_url)
-    response.raise_for_status()  # Raise an exception if the request was unsuccessful
+  # Check if "output" directory exists. If not, create it.
+  if not os.path.isdir("output"):
+    os.mkdir("output")
 
-    response_json = response.json()
-
-    if response_json["success"]:
-      evnts, has_next_page = process_response_data(response_json["data"])
-      print(f"Event Count: {len(evnts)}, Has Next Page: {has_next_page}")
-
-  except requests.exceptions.RequestException as e:
-    print("Error occurred:", e)
+  # Write the data of all the upcoming events to a json file.
+  with open("output/upcoming_events.json", "w") as file:
+    json.dump(evnts, file, indent=2)
