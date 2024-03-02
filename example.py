@@ -14,5 +14,5 @@ if not os.path.isdir("output"):
   os.mkdir("output")
 
 # Write the data of all the upcoming events to a json file.
-with open("output/upcoming_events.json", "w") as file:
-  json.dump(evnts, file, indent=2)
+with open("output/upcoming_events.json", "w") as json_file:
+  json.dump(evnts, json_file, indent=2)
