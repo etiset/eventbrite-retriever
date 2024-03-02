@@ -1,8 +1,6 @@
-import json
-import os
+
 from time import sleep
 from random import uniform as random_uniform
-import random
 import requests
 
 def get_organization_id(organization_page_url):
@@ -33,7 +31,7 @@ def process_event_data(event_data):
   for subkey in venue_address_subkeys_to_track:
     result["venue"][subkey] = event_data["venue"]["address"][subkey]  
 
-  # Add event date to the result.
+  # Add name to the result.
   result["name"] = event_data["name"]["text"]
 
   return result
@@ -49,8 +47,12 @@ def random_sleep(min_seconds, max_seconds):
   # Sleep for a random number of seconds between min_seconds and max_seconds.
   sleep(random_uniform(min_seconds, max_seconds))
 
-def get_all_upcoming_events(organization_id):
-  # Retreive all upcoming events for the organization with the given id.
+def get_all_upcoming_events(organization_page_url):
+  # Retreive all upcoming events based on the organization page url.
+  organization_id = get_organization_id(organization_page_url) # The organization id.
+  req_base_url = f"https://www.eventbrite.com/org/{organization_id}/showmore/" # The base request
+                                                                               # url without
+                                                                               # parameters.
 
   has_next_page = True # Indicates whether there are more pages of events to retrieve.
   page_number = 1 # The page number to retrieve.
@@ -60,10 +62,9 @@ def get_all_upcoming_events(organization_id):
 
   try:
     while has_next_page:
-      page_url = f"https://www.eventbrite.com/org/{organization_id}/showmore/?\
-                    page_size={events_per_page}&type=future&page={page_number}"
+      req_url = req_base_url + f"?page_size={events_per_page}&type=future&page={page_number}"
       
-      response = requests.get(page_url)
+      response = requests.get(req_url)
       response.raise_for_status() # Raise an exception if the request was unsuccessful.
 
       response_json = response.json()
@@ -85,18 +86,3 @@ def get_all_upcoming_events(organization_id):
     print("Error occurred:", e)
 
   return evnts
-
-if __name__ == "__main__":
-  organzation_page_url = "https://www.eventbrite.com/o/leaderboard-games-32824819501"
-  organization_id = get_organization_id(organzation_page_url)
-
-  evnts = get_all_upcoming_events(organization_id)
-  print(f"Retrieved {len(evnts)} upcoming events.")
-
-  # Check if "output" directory exists. If not, create it.
-  if not os.path.isdir("output"):
-    os.mkdir("output")
-
-  # Write the data of all the upcoming events to a json file.
-  with open("output/upcoming_events.json", "w") as file:
-    json.dump(evnts, file, indent=2)
