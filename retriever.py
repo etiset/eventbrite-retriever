@@ -47,8 +47,9 @@ def random_sleep(min_seconds, max_seconds):
   # Sleep for a random number of seconds between min_seconds and max_seconds.
   sleep(random_uniform(min_seconds, max_seconds))
 
-def get_all_upcoming_events(organization_page_url):
-  # Retreive all upcoming events based on the organization page url.
+def get_all_upcoming_events(organization_page_url, print_status=False):
+  # Retreive all upcoming events based on the organization page url. Setting the print_status to
+  # True will print the number of event pages that have been processed.
   organization_id = get_organization_id(organization_page_url) # The organization id.
   req_base_url = f"https://www.eventbrite.com/org/{organization_id}/showmore/" # The base request
                                                                                # url without
@@ -74,6 +75,9 @@ def get_all_upcoming_events(organization_page_url):
 
       page_evnts, has_next_page = process_response_data(response_json["data"])
       evnts.extend(page_evnts)
+
+      if print_status:
+        print(f"Finished processing page {page_number} ({len(evnts)} total events).")
 
       page_number += 1 # The next page will be loaded in the next iteration.
       random_sleep(3.8, 6.3) # Sleep for a random number of seconds between 3.8 and 6.3. This is
