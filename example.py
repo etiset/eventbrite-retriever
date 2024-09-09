@@ -1,4 +1,4 @@
-from retreiver import get_all_upcoming_events
+from retriever import get_all_upcoming_events
 import json
 import os
 
